@@ -1,6 +1,9 @@
 package ru.track;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
 
 /**
@@ -40,7 +43,19 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        long sum = 0;
+        if(file.exists() && file.isFile()) {
+            BufferedReader bf = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String line = bf.readLine();
+            while (line != null) {
+                if(Isword(line)){
+                    Long number = Long.parseLong(line);
+                    sum += number;
+                }
+                line = bf.readLine();
+            }
+        }
+        return sum;
     }
 
 
@@ -52,8 +67,29 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        String result = "";
+        StringBuilder builder = new StringBuilder();
+        if(file.exists() && file.isFile()) {
+            BufferedReader bf = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String line = bf.readLine();
+            while (line != null) {
+                if (!Isword(line) && !line.equals(skipWord)) {
+                    builder.append(line);
+                    builder.append(" ");
+                }
+                line = bf.readLine();
+            }
+        }
+        result = builder.toString();
+        return result;
     }
 
+    public static boolean Isword(String line){
+        for (int i = 0; i < line.length(); i++){
+            if(line.charAt(i) > '9' || line.charAt(i) < '0'){
+                return false;
+            }
+        }
+        return true;
+    }
 }
-
