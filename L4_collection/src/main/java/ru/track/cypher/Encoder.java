@@ -1,5 +1,7 @@
 package ru.track.cypher;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +23,16 @@ public class Encoder {
      * @return зашифрованный текст
      */
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        return null;
+        String temp = text.toLowerCase();
+        StringBuilder result = new StringBuilder();
+        for(int i = 0; i < temp.length(); i++){
+            if(cypherTable.get(temp.charAt(i)) == null) {
+                result.append(temp.charAt(i));
+            }
+            else{
+                result.append(cypherTable.get(temp.charAt(i)));
+            }
+        }
+        return result.toString();
     }
 }
