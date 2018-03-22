@@ -1,3 +1,4 @@
+/*
 package ru.track.jmh;
 
 import java.util.concurrent.TimeUnit;
@@ -16,9 +17,11 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+*/
 /**
 
- */
+ *//*
+
 @BenchmarkMode(value = { Mode.AverageTime, Mode.SingleShotTime })
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)
@@ -49,3 +52,4 @@ public class JMH_newInstance {
         new Runner(opt).run();
     }
 }
+*/
