@@ -135,10 +135,9 @@ public class JsonWriter {
                     map_result.put(field.getAnnotation(SerializedTo.class).value(), JsonWriter.toJson(field.get(object)));
                 }
                 else {
-                    if ((field.get(object) != null) && field.getAnnotation(JsonNullable.class) != null) {
+                    if ((field.get(object) != null) || clazz.getAnnotation(JsonNullable.class) != null) {
                         map_result.put(field.getName(), JsonWriter.toJson(field.get(object)));
-                    } else
-                        map_result.put(field.getName(), JsonWriter.toJson(field.get(object)));
+                    }
                 }
             } catch (IllegalAccessException ignored){}
         }
