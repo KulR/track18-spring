@@ -19,44 +19,17 @@ public class Client {
         this.host = host;
     }
 
-    public void loop() /*throws Exception*/ {
-        try /*(Socket socket = new Socket(host, port))*/ {
+    public void loop(){
+        try {
             Socket socket = new Socket(host, port);
-/*            final OutputStream out = socket.getOutputStream();
-            Scanner scanner = new Scanner(System.in);
-            final InputStream in = socket.getInputStream();*/
-
             WriteThread wt = new WriteThread(socket);
             ListenThread rt = new ListenThread(socket);
             wt.start();
             rt.start();
-            /*while (true) {
-                String line = scanner.nextLine();
-                if ("EXIT".equals(line)) {
-                    socket.close();
-                    break;
-                }
-                out.write(line.getBytes());
-                out.flush();
-
-
-                byte[] buf = new byte[1024];
-                int nRead = in.read(buf);
-                if(nRead != -1) {
-                    System.out.println(new String(buf, 0, nRead));
-                }
-                else{
-                    break;
-                }
-            }*/
         } catch (IOException e) {
-            //System.out.println("exception");
             System.out.print("exception in main client thread");
             e.printStackTrace();
         }
-        return;
-//        WorkThread thread = new WorkThread(port, host, socket);
-//        thread.start();
     }
 
 
@@ -77,13 +50,7 @@ public class Client {
         @Override
         public void run() {
             try {
-//                final OutputStream out = socket.getOutputStream();
                 Scanner scanner = new Scanner(System.in);
-//                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
-//                        socket.getOutputStream()));
-//                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-
-
                 while (!isInterrupted()) {
                     String line = scanner.nextLine();
                     if ("EXIT".equals(line)) {
@@ -93,16 +60,9 @@ public class Client {
                         socket.close();
                         break;
                     }
-
-//                    line += "\n";
                     Message msg = new Message(1, line);
                     out.writeObject(msg);
                     out.flush();
-
-                    /*bw.write(line);
-                    bw.flush();*/
-//                    out.write(line.getBytes());
-//                    out.flush();
                 }
             } catch (IOException e) {
                 System.out.println("exception");
@@ -129,28 +89,11 @@ public class Client {
         @Override
         public void run() {
             try {
-//                InputStream in = socket.getInputStream();
-//                InputStream inputStream = socket.getInputStream();
-//                ObjectInputStream in = new ObjectInputStream(inputStream);
-
                 while (!isInterrupted()) {
-//                    byte[] buf = new byte[1024];
-//                    int nRead = in.read(buf);
-//                    if (nRead != -1) {
-//                        System.out.println(new String(buf, 0, nRead));
-//                    } else {
-//                        break;
-//                    }
-//                    Object obj = in.readObject();
-//                    System.out.println(obj);
-//                    Message msg = (Message) obj;
-//                    ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-//                    Object msg = in.readObject();
                     Message msg = (Message) in.readObject();
                     if (msg == null) {
                         break;
                     }
-//                    System.out.println(msg.getData());
                     System.out.println(msg.getData());
                 }
             } catch (Exception e) {

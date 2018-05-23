@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.*;
 
+import one.nio.mem.SharedMemoryBlobMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,35 +49,6 @@ public class Server {
     synchronized static long setFreeThreads(int setvalue) {
         return setSynchonizedvalue(freeThreads, setvalue);
     }
-
-//    private static LinkedList<Socket> users = new LinkedList<Socket>();
-//
-//    synchronized static LinkedList<Socket> setUsers(Socket user, int setParams) {
-//        switch (setParams) {
-//            case 1:
-//                if (users.contains(user)) {
-//                    System.out.println("This user already in list");
-//                    return users;
-//                } else {
-//                    users.add(user);
-//                    return users;
-//                }
-//            case -1:
-//                if (!users.contains(user)) {
-//                    System.out.println("This user not in list");
-//                    return users;
-//                } else {
-//                    users.remove(user);
-//                    return users;
-//                }
-//            default:
-////                users.remove(user);
-////                LinkedList<Socket> temp = users;
-////                users.add(user);
-////                return temp;
-//                return users;
-//        }
-//    }
 
     private static LinkedList<WorkThread> users = new LinkedList<WorkThread>();
 
@@ -133,20 +105,7 @@ public class Server {
             while (true) {
 
                 Socket socket = serverSocket.accept();
-////                StartWork(socket);
-//                System.out.println("In serve " + socket.isClosed());
-/*            while (true) {
-                InputStream inputStream = socket.getInputStream();
-                byte[] buf = new byte[1024];
-                int nRead = inputStream.read(buf);
-                if (nRead != -1) {
-                    System.out.println(new String(buf, 0, nRead));
-
-                    socket.getOutputStream().write(buf, 0, nRead);
-                    socket.getOutputStream().flush();
-                }*/
-//                StartWork(socket, atomicCounter.incrementAndGet());
-
+//              StartWork(socket, atomicCounter.incrementAndGet());
                 WorkThread thread = new WorkThread(socket, atomicCounter.incrementAndGet());
                 thread.start();
             }
@@ -162,6 +121,7 @@ public class Server {
         Socket socket;
         long id;
         String name;
+        String ShortName;
         ObjectInputStream in;
         ObjectOutputStream out;
 
@@ -170,7 +130,7 @@ public class Server {
             this.id = id;
             setFreeThreads(-1);
             this.setName(SetName(socket));
-//            setUsers(socket, 1);
+            ShortName = String.format("Client@%s:%d", socket.getLocalAddress().toString(), socket.getPort());
             setUsers(this, 1);
             name = SetName(socket);
             try {
@@ -189,24 +149,16 @@ public class Server {
         @Override
         public void run() {
             try {
-//                InputStream inputStream = socket.getInputStream();
-//                BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-//                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-//                ObjectInputStream in = new ObjectInputStream(inputStream);
-//                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-//                bw.write("connected");
-//                bw.flush();
                 out.writeObject(new Message(1, "connected"));
                 out.flush();
                 System.out.println(name + ">\t" + "connected");
                 while (!isInterrupted() || socket.isClosed()) {
-//                    String line = br.readLine();
                     Message msg = (Message) in.readObject();
                     if (msg == null) {
                         break;
                     }
 
-                    if(msg.GetTs() == 0 && msg.getData().equals("EXIT")){
+                    if (msg.GetTs() == 0 && msg.getData().equals("EXIT")) {
                         break;
                     }
                     System.out.print(name);
@@ -216,9 +168,7 @@ public class Server {
 
                     if (msg.GetTs() == 1) {
                         String line = msg.getData();
-                        String name = "Client" + "@" + socket.getLocalAddress().toString() +
-                                ":" + socket.getPort();
-                        line = name + ">\t" + line;
+                        line = ShortName + ">\t" + line;
                         msg.PutData(line);
                         SayAll(this, msg);
                     }
@@ -227,11 +177,7 @@ public class Server {
                 System.out.println("exception in work thread" + name);
                 e.printStackTrace();
             } finally {
-//                LinkedList<Socket> users = setUsers(socket, 0);
-//                System.out.println(setUsers(socket, 0));
-//                System.out.println(socket);
-//                System.out.println(users.contains(socket));
-                String line = "user " + name + ">\t" + "turn off";
+                String line = "user " + ShortName + ">\t" + "turn off";
                 Message msg = new Message(1, line);
                 System.out.println(line);
                 SayAll(this, msg);
@@ -251,13 +197,9 @@ public class Server {
         for (WorkThread user : users) {
             if (!user.equals(thread)) {
                 try {
-//                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(user.socket.getOutputStream()));
-//                    ObjectOutputStream writer = new ObjectOutputStream(user.socket.getOutputStream());
-//                    writer.write(line);
                     ObjectOutputStream writer = user.out;
                     writer.writeObject(msg);
                     writer.flush();
-//                    writer.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -287,7 +229,6 @@ public class Server {
                             if (user.id == Long.parseLong(m.group(1))) {
                                 user.interrupt();
                                 user.socket.close();
-                                //or we can close user.socket
                             }
                         }
                     }
