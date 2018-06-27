@@ -48,7 +48,7 @@ public class CountWords {
             BufferedReader bf = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             String line = bf.readLine();
             while (line != null) {
-                if(Isword(line)){
+                if(Isnumber(line)){
                     Long number = Long.parseLong(line);
                     sum += number;
                 }
@@ -73,7 +73,7 @@ public class CountWords {
             BufferedReader bf = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             String line = bf.readLine();
             while (line != null) {
-                if (!Isword(line) && !line.equals(skipWord)) {
+                if (!Isnumber(line) && !line.equals(skipWord)) {
                     builder.append(line);
                     builder.append(" ");
                 }
@@ -84,7 +84,7 @@ public class CountWords {
         return result;
     }
 
-    public static boolean Isword(String line){
+    public static boolean Isnumber(String line){
         for (int i = 0; i < line.length(); i++){
             if(line.charAt(i) > '9' || line.charAt(i) < '0'){
                 return false;
