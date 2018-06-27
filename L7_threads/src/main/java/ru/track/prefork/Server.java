@@ -4,16 +4,12 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.*;
 
-import one.nio.mem.SharedMemoryBlobMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.naming.ldap.SortKey;
 
 
 /**
@@ -28,7 +24,8 @@ public class Server {
     static Logger log = LoggerFactory.getLogger(Server.class);
 
     private int port;
-    static int freeThreads = 5;
+    static private ServerSocket serverSocket;
+    static private int freeThreads = 5;
 
     synchronized static long setSynchonizedvalue(long value, int setvalue) {
         switch (setvalue) {
@@ -76,9 +73,9 @@ public class Server {
     }
 
 
-    static AtomicLong atomicCounter = new AtomicLong(0);
+    private static AtomicLong atomicCounter = new AtomicLong(0);
 
-    synchronized void StartWork(Socket socket, long id) {
+    synchronized void startWork(Socket socket, long id) {
         if (setFreeThreads(0) > 0) {
             WorkThread thread = new WorkThread(socket, id);
             thread.start();
@@ -97,20 +94,19 @@ public class Server {
     }
 
     public void serve() throws IOException {
-        ServerSocket serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
+        serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
         log.info("on select...");
         AdminThread admin = new AdminThread();
         admin.start();
         try {
             while (true) {
-
                 Socket socket = serverSocket.accept();
-//              StartWork(socket, atomicCounter.incrementAndGet());
+//              startWork(socket, atomicCounter.incrementAndGet());
                 WorkThread thread = new WorkThread(socket, atomicCounter.incrementAndGet());
                 thread.start();
             }
-        } catch (IOException e) {
-            System.out.println("exception in main server thread");
+        } catch (Exception e) {
+            //System.out.println("exception in main server thread");
             e.printStackTrace();
         } finally {
             admin.interrupt();
@@ -118,21 +114,21 @@ public class Server {
     }
 
     static class WorkThread extends Thread {
-        Socket socket;
-        long id;
-        String name;
-        String ShortName;
-        ObjectInputStream in;
-        ObjectOutputStream out;
+        public Socket socket;
+        public long id;
+        private String name;
+        private String shortName;
+        private ObjectInputStream in;
+        private ObjectOutputStream out;
 
         WorkThread(Socket socket, long id) {
             this.socket = socket;
             this.id = id;
             setFreeThreads(-1);
-            this.setName(SetName(socket));
-            ShortName = String.format("Client@%s:%d", socket.getLocalAddress().toString(), socket.getPort());
+            this.setName(setName(socket));
+            shortName = String.format("Client@%s:%d", socket.getLocalAddress().toString(), socket.getPort());
             setUsers(this, 1);
-            name = SetName(socket);
+            name = setName(socket);
             try {
                 in = new ObjectInputStream(socket.getInputStream());
                 out = new ObjectOutputStream(socket.getOutputStream());
@@ -142,7 +138,7 @@ public class Server {
             }
         }
 
-        String SetName(Socket socket) {
+        String setName(Socket socket) {
             return String.format("Client[%d]@%s:%d", id, socket.getLocalAddress().toString(), socket.getPort());
         }
 
@@ -158,7 +154,7 @@ public class Server {
                         break;
                     }
 
-                    if (msg.GetTs() == 0 && msg.getData().equals("EXIT")) {
+                    if (msg.getTs() == 0 && msg.getData().equals("EXIT")) {
                         break;
                     }
                     System.out.print(name);
@@ -166,21 +162,21 @@ public class Server {
                     System.out.println(msg.getData());
 
 
-                    if (msg.GetTs() == 1) {
+                    if (msg.getTs() == 1) {
                         String line = msg.getData();
-                        line = ShortName + ">\t" + line;
-                        msg.PutData(line);
-                        SayAll(this, msg);
+                        line = shortName + ">\t" + line;
+                        msg.putData(line);
+                        sayAll(this, msg);
                     }
                 }
             } catch (Exception e) {
-                System.out.println("exception in work thread" + name);
+                //System.out.println("exception in work thread" + name);
                 e.printStackTrace();
             } finally {
-                String line = "user " + ShortName + ">\t" + "turn off";
+                String line = "user " + shortName + ">\t" + "turn off";
                 Message msg = new Message(1, line);
                 System.out.println(line);
-                SayAll(this, msg);
+                sayAll(this, msg);
                 setUsers(this, -1);
                 setFreeThreads(1);
 
@@ -192,7 +188,7 @@ public class Server {
         }
     }
 
-    static void SayAll(WorkThread thread, Message msg) {
+    static void sayAll(WorkThread thread, Message msg) {
         LinkedList<WorkThread> users = setUsers(thread, 0);
         for (WorkThread user : users) {
             if (!user.equals(thread)) {
@@ -223,10 +219,26 @@ public class Server {
                         for (WorkThread user : users) {
                             System.out.println(user.name);
                         }
+                    } else if (line.equals("shutdown")) {
+                        System.out.println("shutdown");
+                        sayAll(null, new Message(1, "Admin closed server"));
+                        LinkedList<WorkThread> users = setUsers(null, 0);
+                        for (WorkThread user : users) {
+                            user.interrupt();
+                            user.socket.close();
+                        }
+                        serverSocket.close();
                     } else if (m.find()) {
                         LinkedList<WorkThread> users = setUsers(null, 0);
                         for (WorkThread user : users) {
                             if (user.id == Long.parseLong(m.group(1))) {
+                                try {
+                                    ObjectOutputStream writer = user.out;
+                                    writer.writeObject(new Message(1, "You're kicked"));
+                                    writer.flush();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 user.interrupt();
                                 user.socket.close();
                             }

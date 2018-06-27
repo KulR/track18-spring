@@ -15,11 +15,11 @@ public class Message implements Serializable {
         return data;
     }
 
-    public void PutData(String data){
+    public void putData(String data){
         this.data = data;
     }
 
-    public long GetTs(){
+    public long getTs(){
         return ts;
     }
 }

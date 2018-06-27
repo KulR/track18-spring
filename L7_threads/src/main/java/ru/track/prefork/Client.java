@@ -2,7 +2,6 @@ package ru.track.prefork;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
@@ -20,13 +19,17 @@ public class Client {
     }
 
     public void loop(){
+        Socket socket = null;
         try {
-            Socket socket = new Socket(host, port);
+            socket = new Socket(host, port);
             WriteThread wt = new WriteThread(socket);
             ListenThread rt = new ListenThread(socket);
             wt.start();
             rt.start();
         } catch (IOException e) {
+            try{
+                socket.close();
+            } catch (Exception ignored){}
             System.out.print("exception in main client thread");
             e.printStackTrace();
         }
@@ -34,8 +37,8 @@ public class Client {
 
 
     static class WriteThread extends Thread {
-        Socket socket;
-        ObjectOutputStream out;
+        private Socket socket;
+        private ObjectOutputStream out;
 
         WriteThread(Socket socket) {
             this.socket = socket;
@@ -65,15 +68,20 @@ public class Client {
                     out.flush();
                 }
             } catch (IOException e) {
-                System.out.println("exception");
+                //System.out.println("exception");
                 e.printStackTrace();
+            }
+            finally {
+                try{
+                    socket.close();
+                } catch (Exception ignored){}
             }
         }
     }
 
     static class ListenThread extends Thread {
-        Socket socket;
-        ObjectInputStream in;
+        private Socket socket;
+        private ObjectInputStream in;
 
         ListenThread(Socket socket) {
             this.socket = socket;
@@ -97,10 +105,13 @@ public class Client {
                     System.out.println(msg.getData());
                 }
             } catch (Exception e) {
-                System.out.println("exception");
                 e.printStackTrace();
             }
-
+            finally {
+                try{
+                    socket.close();
+                } catch (Exception ignored){}
+            }
         }
     }
 
